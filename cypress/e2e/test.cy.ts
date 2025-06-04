@@ -11,7 +11,9 @@ beforeEach(() => {
 
   // Перехват запросов
   cy.fixture('ingredients.json').then((ingredients) => {
-    cy.intercept('GET', `${API_URL}/ingredients`, ingredients).as('getIngredients');
+    cy.intercept('GET', `${API_URL}/ingredients`, ingredients).as(
+      'getIngredients'
+    );
   });
 
   cy.fixture('orders.json').then((orders) => {
@@ -34,7 +36,10 @@ describe('Проверка работоспособности приложени
   it('есть возможность добавлять булку и ингридиенты', () => {
     cy.get('[data-cy=no_bun_text_1]').should('contain', 'Выберите булки');
     cy.get('[data-cy=no_bun_text_2]').should('contain', 'Выберите булки');
-    cy.get('[data-cy=no_ingredients_text]').should('contain', 'Выберите начинку');
+    cy.get('[data-cy=no_ingredients_text]').should(
+      'contain',
+      'Выберите начинку'
+    );
 
     cy.get('[data-cy=bun_0] button').click();
     cy.get('[data-cy=ingredient_0] button').click({ multiple: true });
@@ -60,12 +65,18 @@ describe('Проверка работоспособности приложени
       cy.get('[data-cy=new_order_total] button').click();
       cy.wait('@newOrder');
 
-      cy.get('[data-cy=new_order_number]').should('contain', newOrder.order.number);
+      cy.get('[data-cy=new_order_number]').should(
+        'contain',
+        newOrder.order.number
+      );
       cy.get('[data-cy=close_modal_btn]').click();
 
       cy.get('[data-cy=no_bun_text_1]').should('contain', 'Выберите булки');
       cy.get('[data-cy=no_bun_text_2]').should('contain', 'Выберите булки');
-      cy.get('[data-cy=no_ingredients_text]').should('contain', 'Выберите начинку');
+      cy.get('[data-cy=no_ingredients_text]').should(
+        'contain',
+        'Выберите начинку'
+      );
     });
   });
 });
