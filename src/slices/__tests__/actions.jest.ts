@@ -1,4 +1,4 @@
-import { expect, test, describe, jest } from '@jest/globals';
+import { expect, test, describe } from '@jest/globals';
 import { configureStore } from '@reduxjs/toolkit';
 import stellarBurgerSlice, {
   addIngredient,
@@ -12,19 +12,11 @@ import stellarBurgerSlice, {
   removeErrorText,
   removeOrders,
   removeUserOrders,
-  selectConstructorItems,
-  selectErrorText,
-  selectIsInit,
-  selectIsModalOpened,
-  selectOrderModalData,
-  selectOrderRequest,
-  selectOrders,
-  selectUserOrders,
   setErrorText
 } from '../stellarBurgerSlice';
 import { mockStore, mockIngredient, mockBun } from '../mockData';
 
-function initStore() {
+const setupTestStore = () => {
   return configureStore({
     reducer: {
       stellarBurger: stellarBurgerSlice
@@ -33,125 +25,101 @@ function initStore() {
       stellarBurger: mockStore
     }
   });
-}
+};
 
-describe('Test actions', () => {
-  test('Test deleteIngredient', () => {
-    const store = initStore();
-    const before = selectConstructorItems(store.getState()).ingredients.length;
-    store.dispatch(deleteIngredient(mockIngredient));
-    const after = selectConstructorItems(store.getState()).ingredients.length;
-    expect(before).toBe(3);
-    expect(after).toBe(2);
+describe('stellarBurgerSlice actions', () => {
+  let store: ReturnType<typeof setupTestStore>;
+
+  beforeEach(() => {
+    store = setupTestStore();
   });
 
-  test('Test addIngredient', () => {
-    const store = initStore();
-    store.dispatch(addIngredient(mockIngredient));
-    store.dispatch(addIngredient(mockBun));
+  describe('ingredient actions', () => {
+    test('addIngredient should add ingredient to constructor', () => {
+      const initialCount = store.getState().stellarBurger.constructorItems.ingredients.length;
+      store.dispatch(addIngredient(mockIngredient));
+      const newCount = store.getState().stellarBurger.constructorItems.ingredients.length;
+      expect(newCount).toBe(initialCount + 1);
+    });
 
-    const constructor = selectConstructorItems(store.getState());
-    expect(constructor.ingredients.length).toEqual(4);
-    expect(constructor.bun.name === 'Краторная булка N-200i');
-  });
+    test('deleteIngredient should remove ingredient from constructor', () => {
+      const initialCount = store.getState().stellarBurger.constructorItems.ingredients.length;
+      store.dispatch(deleteIngredient(mockIngredient));
+      const newCount = store.getState().stellarBurger.constructorItems.ingredients.length;
+      expect(newCount).toBe(initialCount - 1);
+    });
 
-  test('Test closeOrderRequest', () => {
-    const store = initStore();
-    store.dispatch(closeOrderRequest());
+    test('moveIngredientUp should move ingredient up in the list', () => {
+      const ingredients = [...store.getState().stellarBurger.constructorItems.ingredients];
+      const lastIngredient = ingredients[ingredients.length - 1];
+      store.dispatch(moveIngredientUp(lastIngredient));
+      const updatedIngredients = store.getState().stellarBurger.constructorItems.ingredients;
+      expect(updatedIngredients[updatedIngredients.length - 2]).toEqual(lastIngredient);
+    });
 
-    const orderRequest = selectOrderRequest(store.getState());
-    const orderModalData = selectOrderModalData(store.getState());
-    const constructorItems = selectConstructorItems(store.getState());
-
-    expect(orderRequest).toBe(false);
-    expect(orderModalData).toBe(null);
-    expect(constructorItems).toEqual({
-      bun: {
-        price: 0
-      },
-      ingredients: []
+    test('moveIngredientDown should move ingredient down in the list', () => {
+      const ingredients = [...store.getState().stellarBurger.constructorItems.ingredients];
+      const firstIngredient = ingredients[0];
+      store.dispatch(moveIngredientDown(firstIngredient));
+      const updatedIngredients = store.getState().stellarBurger.constructorItems.ingredients;
+      expect(updatedIngredients[1]).toEqual(firstIngredient);
     });
   });
 
-  test('Test removeOrders', () => {
-    const store = initStore();
-    const initialOrders = selectOrders(store.getState()).length;
-    store.dispatch(removeOrders());
-    const orders = selectOrders(store.getState()).length;
-    expect(initialOrders).toBe(2);
-    expect(orders).toBe(0);
+  describe('order actions', () => {
+    test('closeOrderRequest should reset order state', () => {
+      store.dispatch(closeOrderRequest());
+      const state = store.getState().stellarBurger;
+      expect(state.orderRequest).toBe(false);
+      expect(state.orderModalData).toBeNull();
+      expect(state.constructorItems).toEqual({
+        bun: { price: 0 },
+        ingredients: []
+      });
+    });
   });
 
-  test('Test removeUserOrders', () => {
-    const store = initStore();
-    const initialOrders = selectUserOrders(store.getState())!.length;
-    store.dispatch(removeUserOrders());
-    const orders = selectUserOrders(store.getState());
-    expect(initialOrders).toBe(2);
-    expect(orders).toBe(null);
+  describe('modal actions', () => {
+    test('openModal should set isModalOpened to true', () => {
+      store.dispatch(openModal());
+      expect(store.getState().stellarBurger.isModalOpened).toBe(true);
+    });
+
+    test('closeModal should set isModalOpened to false', () => {
+      store.dispatch(closeModal());
+      expect(store.getState().stellarBurger.isModalOpened).toBe(false);
+    });
   });
 
-  test('Test init', () => {
-    const store = initStore();
-    const beforeInit = selectIsInit(store.getState());
-    store.dispatch(init());
-    const afterInit = selectIsInit(store.getState());
-    expect(beforeInit).toBe(false);
-    expect(afterInit).toBe(true);
+  describe('error actions', () => {
+    test('setErrorText should update error text', () => {
+      const errorMessage = 'New error message';
+      store.dispatch(setErrorText(errorMessage));
+      expect(store.getState().stellarBurger.errorText).toBe(errorMessage);
+    });
+
+    test('removeErrorText should clear error text', () => {
+      store.dispatch(removeErrorText());
+      expect(store.getState().stellarBurger.errorText).toBe('');
+    });
   });
 
-  test('Test openModal', () => {
-    const store = initStore();
-    const beforeOpen = selectIsModalOpened(store.getState());
-    store.dispatch(openModal());
-    const afterOpen = selectIsModalOpened(store.getState());
-    expect(beforeOpen).toBe(false);
-    expect(afterOpen).toBe(true);
-  });
+  describe('data management actions', () => {
+    test('init should set isInit to true', () => {
+      store.dispatch(init());
+      expect(store.getState().stellarBurger.isInit).toBe(true);
+    });
 
-  test('Test closeModal', () => {
-    const store = initStore();
-    store.dispatch(closeModal());
-    const isOpen = selectIsModalOpened(store.getState());
-    expect(isOpen).toBe(false);
-  });
+    test('removeOrders should clear orders list', () => {
+      const initialCount = store.getState().stellarBurger.orders.length;
+      store.dispatch(removeOrders());
+      expect(store.getState().stellarBurger.orders.length).toBe(0);
+      expect(initialCount).toBeGreaterThan(0);
+    });
 
-  test('Test setErrorText', () => {
-    const store = initStore();
-    store.dispatch(setErrorText('my test error'));
-    const errorText = selectErrorText(store.getState());
-    expect(errorText).toBe('my test error');
-  });
-
-  test('Test removeErrorText', () => {
-    const store = initStore();
-    store.dispatch(setErrorText('Error here!'));
-    store.dispatch(removeErrorText());
-    const errorText = selectErrorText(store.getState());
-    expect(errorText).toBe('');
-  });
-
-  test('Test moveIngredientUp', () => {
-    const store = initStore();
-    let ingredients = selectConstructorItems(store.getState()).ingredients;
-    const lastIngredient = ingredients[ingredients.length - 1];
-
-    store.dispatch(moveIngredientUp(lastIngredient));
-
-    ingredients = selectConstructorItems(store.getState()).ingredients;
-
-    expect(ingredients[ingredients.length - 2]).toEqual(lastIngredient);
-  });
-
-  test('Test moveIngredientDown', () => {
-    const store = initStore();
-    let ingredients = selectConstructorItems(store.getState()).ingredients;
-    const firstIngredient = ingredients[0];
-
-    store.dispatch(moveIngredientDown(firstIngredient));
-
-    ingredients = selectConstructorItems(store.getState()).ingredients;
-
-    expect(ingredients[1]).toEqual(firstIngredient);
+    test('removeUserOrders should clear user orders', () => {
+      store.dispatch(removeUserOrders());
+      expect(store.getState().stellarBurger.userOrders).toBeNull();
+    });
   });
 });

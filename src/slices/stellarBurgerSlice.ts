@@ -19,9 +19,9 @@ import {
   TOrder,
   TUser
 } from '@utils-types';
-import { deleteCookie, setCookie } from '../utils/cookie';
 import { v4 as uuidv4 } from 'uuid';
 
+// Типы и интерфейсы
 type TInitialState = {
   ingredients: TIngredient[];
   loading: boolean;
@@ -39,21 +39,17 @@ type TInitialState = {
   errorText: string;
 };
 
+// Начальное состояние
 export const initialState: TInitialState = {
   ingredients: [],
   loading: false,
   orderModalData: null,
   constructorItems: {
-    bun: {
-      price: 0
-    },
+    bun: { price: 0 },
     ingredients: []
   },
   orderRequest: false,
-  user: {
-    name: '',
-    email: ''
-  },
+  user: { name: '', email: '' },
   orders: [],
   totalOrders: 0,
   ordersToday: 0,
@@ -64,83 +60,110 @@ export const initialState: TInitialState = {
   errorText: ''
 };
 
+// Асинхронные действия
+export const fetchIngredients = createAsyncThunk(
+  'ingredients/getAll',
+  getIngredientsApi
+);
+
+export const fetchNewOrder = createAsyncThunk(
+  'orders/newOrder',
+  orderBurgerApi
+);
+
+export const fetchLoginUser = createAsyncThunk(
+  'user/login',
+  loginUserApi
+);
+
+export const fetchRegisterUser = createAsyncThunk(
+  'user/register',
+  registerUserApi
+);
+
+export const getUserThunk = createAsyncThunk('user/get', getUserApi);
+export const fetchFeed = createAsyncThunk('user/feed', getFeedsApi);
+export const fetchUserOrders = createAsyncThunk('user/orders', getOrdersApi);
+export const fetchLogout = createAsyncThunk('user/logout', logoutApi);
+
+export const fetchUpdateUser = createAsyncThunk(
+  'user/update',
+  updateUserApi
+);
+
+// Создание слайса
 const stellarBurgerSlice = createSlice({
   name: 'stellarBurger',
   initialState,
   reducers: {
-    addIngredient(state, action: PayloadAction<TIngredient>) {
-      if (action.payload.type === 'bun') {
-        state.constructorItems.bun = action.payload;
-      } else {
-        state.constructorItems.ingredients.push({
+    // Конструктор бургера
+    addIngredient: (state, action: PayloadAction<TIngredient>) => {
+      action.payload.type === 'bun'
+        ? (state.constructorItems.bun = action.payload)
+        : state.constructorItems.ingredients.push({
           ...action.payload,
           uniqueId: uuidv4()
         });
+    },
+    deleteIngredient: (state, action: PayloadAction<TIngredientUnique>) => {
+      state.constructorItems.ingredients = state.constructorItems.ingredients.filter(
+        (item) => item.uniqueId !== action.payload.uniqueId
+      );
+    },
+    moveIngredientUp: (state, action: PayloadAction<TIngredientUnique>) => {
+      const index = state.constructorItems.ingredients.findIndex(
+        (item) => item.uniqueId === action.payload.uniqueId
+      );
+      if (index > 0) {
+        [state.constructorItems.ingredients[index], state.constructorItems.ingredients[index - 1]] =
+          [state.constructorItems.ingredients[index - 1], state.constructorItems.ingredients[index]];
       }
     },
-    closeOrderRequest(state) {
+    moveIngredientDown: (state, action: PayloadAction<TIngredientUnique>) => {
+      const index = state.constructorItems.ingredients.findIndex(
+        (item) => item.uniqueId === action.payload.uniqueId
+      );
+      if (index < state.constructorItems.ingredients.length - 1) {
+        [state.constructorItems.ingredients[index], state.constructorItems.ingredients[index + 1]] =
+          [state.constructorItems.ingredients[index + 1], state.constructorItems.ingredients[index]];
+      }
+    },
+
+    // Заказы
+    closeOrderRequest: (state) => {
       state.orderRequest = false;
       state.orderModalData = null;
       state.constructorItems = {
-        bun: {
-          price: 0
-        },
+        bun: { price: 0 },
         ingredients: []
       };
     },
-    removeOrders(state) {
-      state.orders.length = 0;
+    removeOrders: (state) => {
+      state.orders = [];
     },
-    removeUserOrders(state) {
+    removeUserOrders: (state) => {
       state.userOrders = null;
     },
-    init(state) {
-      state.isInit = true;
-    },
-    openModal(state) {
+
+    // Модальные окна
+    openModal: (state) => {
       state.isModalOpened = true;
     },
-    closeModal(state) {
+    closeModal: (state) => {
       state.isModalOpened = false;
     },
-    deleteIngredient(state, action: PayloadAction<TIngredientUnique>) {
-      const ingredientIndex = state.constructorItems.ingredients.findIndex(
-        (item) => item.uniqueId === action.payload.uniqueId
-      );
-      state.constructorItems.ingredients =
-        state.constructorItems.ingredients.filter(
-          (_, index) => index !== ingredientIndex
-        );
-    },
-    setErrorText(state, action: PayloadAction<string>) {
+
+    // Ошибки
+    setErrorText: (state, action: PayloadAction<string>) => {
       state.errorText = action.payload;
     },
-    removeErrorText(state) {
+    removeErrorText: (state) => {
       state.errorText = '';
     },
-    moveIngredientUp(state, action: PayloadAction<TIngredientUnique>) {
-      const ingredientIndex = state.constructorItems.ingredients.findIndex(
-        (item) => item.uniqueId === action.payload.uniqueId
-      );
-      const prevItem = state.constructorItems.ingredients[ingredientIndex - 1];
-      state.constructorItems.ingredients.splice(
-        ingredientIndex - 1,
-        2,
-        action.payload,
-        prevItem
-      );
-    },
-    moveIngredientDown(state, action: PayloadAction<TIngredientUnique>) {
-      const ingredientIndex = state.constructorItems.ingredients.findIndex(
-        (item) => item.uniqueId === action.payload.uniqueId
-      );
-      const nextItem = state.constructorItems.ingredients[ingredientIndex + 1];
-      state.constructorItems.ingredients.splice(
-        ingredientIndex,
-        2,
-        nextItem,
-        action.payload
-      );
+
+    // Инициализация
+    init: (state) => {
+      state.isInit = true;
     }
   },
   selectors: {
@@ -161,6 +184,7 @@ const stellarBurgerSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      // Ингредиенты
       .addCase(fetchIngredients.pending, (state) => {
         state.loading = true;
       })
@@ -168,60 +192,70 @@ const stellarBurgerSlice = createSlice({
         state.loading = false;
         state.ingredients = action.payload;
       })
-      .addCase(fetchIngredients.rejected, (state, action) => {
+      .addCase(fetchIngredients.rejected, (state) => {
         state.loading = false;
       })
+
+      // Заказы
       .addCase(fetchNewOrder.pending, (state) => {
         state.orderRequest = true;
-      })
-      .addCase(fetchNewOrder.rejected, (state, action) => {
-        state.orderRequest = false;
       })
       .addCase(fetchNewOrder.fulfilled, (state, action) => {
         state.orderModalData = action.payload.order;
         state.orderRequest = false;
       })
+      .addCase(fetchNewOrder.rejected, (state) => {
+        state.orderRequest = false;
+      })
+
+      // Аутентификация
       .addCase(fetchLoginUser.pending, (state) => {
         state.loading = true;
       })
-      .addCase(fetchLoginUser.rejected, (state, action) => {
-        state.loading = false;
-        state.errorText = action.error.message!;
-      })
       .addCase(fetchLoginUser.fulfilled, (state, action) => {
         state.loading = false;
+        state.user = action.payload.user;
         state.isAuthenticated = true;
+        state.errorText = '';
       })
+      .addCase(fetchLoginUser.rejected, (state, action) => {
+        state.loading = false;
+        state.errorText = action.error.message || 'Ошибка авторизации';
+      })
+
+      // Регистрация
       .addCase(fetchRegisterUser.pending, (state) => {
         state.loading = true;
       })
-      .addCase(fetchRegisterUser.rejected, (state, action) => {
-        state.loading = false;
-        state.errorText = action.error.message!;
-      })
       .addCase(fetchRegisterUser.fulfilled, (state, action) => {
         state.loading = false;
+        state.user = action.payload.user;
         state.isAuthenticated = true;
+        state.errorText = '';
       })
+      .addCase(fetchRegisterUser.rejected, (state, action) => {
+        state.loading = false;
+        state.errorText = action.error.message || 'Ошибка регистрации';
+      })
+
+      // Получение данных пользователя
       .addCase(getUserThunk.pending, (state) => {
         state.loading = true;
       })
-      .addCase(getUserThunk.rejected, (state, action) => {
+      .addCase(getUserThunk.fulfilled, (state, action) => {
+        state.loading = false;
+        state.user = action.payload.user;
+        state.isAuthenticated = true;
+      })
+      .addCase(getUserThunk.rejected, (state) => {
         state.loading = false;
         state.isAuthenticated = false;
         state.user = { name: '', email: '' };
       })
-      .addCase(getUserThunk.fulfilled, (state, action) => {
-        state.loading = false;
-        state.user.name = action.payload.user.name;
-        state.user.email = action.payload.user.email;
-        state.isAuthenticated = true;
-      })
+
+      // Лента заказов
       .addCase(fetchFeed.pending, (state) => {
         state.loading = true;
-      })
-      .addCase(fetchFeed.rejected, (state) => {
-        state.loading = false;
       })
       .addCase(fetchFeed.fulfilled, (state, action) => {
         state.loading = false;
@@ -229,85 +263,63 @@ const stellarBurgerSlice = createSlice({
         state.totalOrders = action.payload.total;
         state.ordersToday = action.payload.totalToday;
       })
+      .addCase(fetchFeed.rejected, (state) => {
+        state.loading = false;
+      })
+
+      // История заказов пользователя
       .addCase(fetchUserOrders.pending, (state) => {
         state.loading = true;
-      })
-      .addCase(fetchUserOrders.rejected, (state) => {
-        state.loading = false;
       })
       .addCase(fetchUserOrders.fulfilled, (state, action) => {
         state.loading = false;
         state.userOrders = action.payload;
       })
+      .addCase(fetchUserOrders.rejected, (state) => {
+        state.loading = false;
+      })
+
+      // Выход из системы
       .addCase(fetchLogout.pending, (state) => {
         state.loading = true;
+      })
+      .addCase(fetchLogout.fulfilled, (state) => {
+        state.loading = false;
+        state.user = { name: '', email: '' };
+        state.isAuthenticated = false;
       })
       .addCase(fetchLogout.rejected, (state) => {
         state.loading = false;
       })
-      .addCase(fetchLogout.fulfilled, (state, action) => {
-        state.loading = false;
-        if (action.payload.success) {
-          state.user = { name: '', email: '' };
-          state.isAuthenticated = false;
-        }
-      })
+
+      // Обновление данных пользователя
       .addCase(fetchUpdateUser.pending, (state) => {
         state.loading = true;
       })
-      .addCase(fetchUpdateUser.rejected, (state) => {
-        state.loading = false;
-      })
       .addCase(fetchUpdateUser.fulfilled, (state, action) => {
         state.loading = false;
-        if (action.payload.success) {
-          state.user.name = action.payload.user.name;
-          state.user.email = action.payload.user.email;
-        }
+        state.user = action.payload.user;
+      })
+      .addCase(fetchUpdateUser.rejected, (state) => {
+        state.loading = false;
       });
   }
 });
 
-export const fetchIngredients = createAsyncThunk(
-  'ingredients/getAll',
-  async () => getIngredientsApi()
-);
-
-export const fetchNewOrder = createAsyncThunk(
-  'orders/newOrder',
-  async (data: string[]) => orderBurgerApi(data)
-);
-
-export const fetchLoginUser = createAsyncThunk(
-  'user/login',
-  async (data: TLoginData) => loginUserApi(data)
-);
-
-export const fetchRegisterUser = createAsyncThunk(
-  'user/register',
-  async (data: TRegisterData) => registerUserApi(data)
-);
-
-export const getUserThunk = createAsyncThunk('user/get', async () =>
-  getUserApi()
-);
-
-export const fetchFeed = createAsyncThunk('user/feed', async () =>
-  getFeedsApi()
-);
-
-export const fetchUserOrders = createAsyncThunk('user/orders', async () =>
-  getOrdersApi()
-);
-
-export const fetchLogout = createAsyncThunk('user/logout', async () =>
-  logoutApi()
-);
-
-export const fetchUpdateUser = createAsyncThunk(
-  'user/update',
-  async (user: Partial<TRegisterData>) => updateUserApi(user)
-);
+export const {
+  addIngredient,
+  closeOrderRequest,
+  removeOrders,
+  removeUserOrders,
+  init,
+  openModal,
+  closeModal,
+  deleteIngredient,
+  setErrorText,
+  removeErrorText,
+  moveIngredientUp,
+  moveIngredientDown
+} = stellarBurgerSlice.actions;
 
 export const {
   selectLoading,
@@ -326,18 +338,4 @@ export const {
   selectErrorText
 } = stellarBurgerSlice.selectors;
 
-export const {
-  addIngredient,
-  closeOrderRequest,
-  removeOrders,
-  removeUserOrders,
-  init,
-  openModal,
-  closeModal,
-  deleteIngredient,
-  setErrorText,
-  removeErrorText,
-  moveIngredientUp,
-  moveIngredientDown
-} = stellarBurgerSlice.actions;
 export default stellarBurgerSlice.reducer;

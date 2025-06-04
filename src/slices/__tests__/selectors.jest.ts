@@ -1,4 +1,4 @@
-import { expect, test, describe, jest } from '@jest/globals';
+import { expect, test, describe } from '@jest/globals';
 import { configureStore } from '@reduxjs/toolkit';
 import stellarBurgerSlice, {
   selectConstructorItems,
@@ -18,17 +18,25 @@ import stellarBurgerSlice, {
 } from '../stellarBurgerSlice';
 import { mockStore } from '../mockData';
 
-let store = configureStore({
-  reducer: {
-    stellarBurger: stellarBurgerSlice
-  },
-  preloadedState: {
-    stellarBurger: mockStore
-  }
-});
+const setupTestStore = () => {
+  return configureStore({
+    reducer: {
+      stellarBurger: stellarBurgerSlice
+    },
+    preloadedState: {
+      stellarBurger: mockStore
+    }
+  });
+};
 
-describe('Test selectors', () => {
-  test('Test selectUser', () => {
+describe('stellarBurgerSlice selectors', () => {
+  let store: ReturnType<typeof setupTestStore>;
+
+  beforeEach(() => {
+    store = setupTestStore();
+  });
+
+  test('selectUser should return user data', () => {
     const user = selectUser(store.getState());
     expect(user).toEqual({
       name: 'testUser',
@@ -36,68 +44,68 @@ describe('Test selectors', () => {
     });
   });
 
-  test('Test selectIsInit', () => {
-    const isInit = selectIsInit(store.getState());
-    expect(isInit).toBe(false);
-  });
-
-  test('Test selectIsModalOpened', () => {
-    const isModalOpened = selectIsModalOpened(store.getState());
-    expect(isModalOpened).toBe(false);
-  });
-
-  test('Test selectErrorText', () => {
-    const errorText = selectErrorText(store.getState());
-    expect(errorText).toBe('test error text');
-  });
-
-  test('Test selectIsAuthenticated', () => {
+  test('selectIsAuthenticated should return authentication status', () => {
     const isAuthenticated = selectIsAuthenticated(store.getState());
     expect(isAuthenticated).toBe(true);
   });
 
-  test('Test selectLoading', () => {
+  test('selectLoading should return loading status', () => {
     const loading = selectLoading(store.getState());
     expect(loading).toBe(false);
   });
 
-  test('Test selectOrderRequest', () => {
+  test('selectErrorText should return error message', () => {
+    const errorText = selectErrorText(store.getState());
+    expect(errorText).toBe('test error text');
+  });
+
+  test('selectIsInit should return initialization status', () => {
+    const isInit = selectIsInit(store.getState());
+    expect(isInit).toBe(false);
+  });
+
+  test('selectIsModalOpened should return modal status', () => {
+    const isModalOpened = selectIsModalOpened(store.getState());
+    expect(isModalOpened).toBe(false);
+  });
+
+  test('selectOrderRequest should return order request status', () => {
     const orderRequest = selectOrderRequest(store.getState());
     expect(orderRequest).toBe(false);
   });
 
-  test('Test selectTotalOrders', () => {
-    const totalOrders = selectTotalOrders(store.getState());
-    expect(totalOrders).toBe(1000);
-  });
-
-  test('Test selectTodayOrders', () => {
-    const todayOrders = selectTodayOrders(store.getState());
-    expect(todayOrders).toBe(20);
-  });
-
-  test('Test selectIngredients', () => {
+  test('selectIngredients should return ingredients list', () => {
     const ingredients = selectIngredients(store.getState());
     expect(ingredients).toEqual(mockStore.ingredients);
   });
 
-  test('Test selectConstructorItems', () => {
+  test('selectConstructorItems should return constructor items', () => {
     const constructorItems = selectConstructorItems(store.getState());
     expect(constructorItems).toEqual(mockStore.constructorItems);
   });
 
-  test('Test selectOrderModalData', () => {
+  test('selectOrderModalData should return order modal data', () => {
     const orderModalData = selectOrderModalData(store.getState());
     expect(orderModalData).toEqual(mockStore.orderModalData);
   });
 
-  test('Test selectOrders', () => {
+  test('selectOrders should return orders list', () => {
     const orders = selectOrders(store.getState());
     expect(orders).toEqual(mockStore.orders);
   });
 
-  test('Test selectUserOrders', () => {
+  test('selectUserOrders should return user orders', () => {
     const userOrders = selectUserOrders(store.getState());
     expect(userOrders).toEqual(mockStore.userOrders);
+  });
+
+  test('selectTotalOrders should return total orders count', () => {
+    const totalOrders = selectTotalOrders(store.getState());
+    expect(totalOrders).toBe(1000);
+  });
+
+  test('selectTodayOrders should return today orders count', () => {
+    const todayOrders = selectTodayOrders(store.getState());
+    expect(todayOrders).toBe(20);
   });
 });

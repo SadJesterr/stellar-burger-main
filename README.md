@@ -53,9 +53,9 @@ yarn build
 
 ## Скриншоты
 
-![](screenshot_1.jpg)
-![](screenshot_2.jpg)
-![](screenshot_3.jpg)
+![](sc1.jpg)
+![](sc2.jpg)
+![](sc3.jpg)
 
 ## Автор
 
