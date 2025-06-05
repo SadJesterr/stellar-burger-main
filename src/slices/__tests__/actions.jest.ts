@@ -27,6 +27,21 @@ const setupTestStore = () => {
   });
 };
 
+describe('stellarBurgerSlice root reducer tests', () => {
+  test('should return initial state when no action is provided', () => {
+    const initialState = mockStore;
+    const emptyAction = { type: '' };
+    const result = stellarBurgerSlice(initialState, emptyAction);
+    expect(result).toEqual(initialState);
+  });
+
+  test('should not mutate state when unknown action is dispatched', () => {
+    const initialState = mockStore;
+    const result = stellarBurgerSlice(initialState, { type: 'UNKNOWN_ACTION' });
+    expect(result).toBe(initialState);
+  });
+});
+
 describe('stellarBurgerSlice actions', () => {
   let store: ReturnType<typeof setupTestStore>;
 

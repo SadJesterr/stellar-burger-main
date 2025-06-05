@@ -1,4 +1,5 @@
 const API_URL = Cypress.env('BURGER_API_URL');
+const BASE_URL = Cypress.config().baseUrl;
 
 Cypress.on('uncaught:exception', () => false);
 
@@ -24,13 +25,18 @@ beforeEach(() => {
     cy.intercept('GET', `${API_URL}/auth/user`, user).as('getUser');
   });
 
-  cy.visit('http://localhost:4000');
+  cy.visit(`${BASE_URL}/`);
   cy.wait('@getIngredients');
+});
+
+afterEach(() => {
+  cy.clearAllCookies();
+  cy.clearAllLocalStorage();
 });
 
 describe('Проверка работоспособности приложения', () => {
   it('сервис должен быть доступен по адресу localhost:4000', () => {
-    cy.url().should('include', 'localhost:4000');
+    cy.url().should('include', `${BASE_URL}/`);
   });
 
   it('есть возможность добавлять булку и ингридиенты', () => {
@@ -48,11 +54,27 @@ describe('Проверка работоспособности приложени
     cy.get('[data-cy=ingredient_element]').should('exist');
   });
 
+
+
   it('проверка открытия и закрытия модального окна ингридиента', () => {
-    cy.get('[data-cy=bun_0]').click();
-    cy.get('[data-cy=ingredient_modal]').should('exist');
-    cy.get('[data-cy=close_modal_btn]').click();
-    cy.get('[data-cy=ingredient_modal]').should('not.exist');
+    cy.fixture('ingredients.json').then((ingredients) => {
+      const testIngredient = ingredients.data[0];
+      
+      // Кликаем на ингредиент
+      cy.get('[data-cy=bun_0]').click();
+      
+      // Проверяем, что модальное окно открылось и содержит правильные данные
+      cy.get('[data-cy=ingredient_modal]').should('exist');
+      cy.get('[data-cy=ingredient_modal]').should('contain', testIngredient.name);
+      cy.get('[data-cy=ingredient_modal]').should('contain', testIngredient.calories);
+      cy.get('[data-cy=ingredient_modal]').should('contain', testIngredient.proteins);
+      cy.get('[data-cy=ingredient_modal]').should('contain', testIngredient.fat);
+      cy.get('[data-cy=ingredient_modal]').should('contain', testIngredient.carbohydrates);
+      
+      // Закрываем модальное окно и проверяем, что оно закрылось
+      cy.get('[data-cy=close_modal_btn]').click();
+      cy.get('[data-cy=ingredient_modal]').should('not.exist');
+    });
   });
 
   it('проверка нового заказа', () => {
